@@ -109,7 +109,7 @@ class DailyQuery(Resource):
                 for company_daily in company_dailies:
                     db_company_daily_date_time_obj = datetime.strptime(company_daily.date, '%d/%m/%y').date()
                     if start_company_daily_date_time_obj <= db_company_daily_date_time_obj <= end_company_daily_date_time_obj:
-                        results[str(db_company_daily_date_time_obj)] = company_daily.total
+                        results[str(db_company_daily_date_time_obj)] = "%.2f" %float(company_daily.total)
             else:
                 return {'message': 'this company does not have any transaction'}
         else:
@@ -117,8 +117,8 @@ class DailyQuery(Resource):
 
         total = 0
         for _, value in results.items():
-            total += value
-        results['total'] = total
+            total += float(value)
+        results['total'] = "%.2f" %total
 
         return results
 
@@ -149,9 +149,9 @@ class HourlyQuery(Resource):
                     db_company_hourly_date_time_obj = datetime.strptime(company_hourly.hour, '%H:%M').time()
                     if start_company_time_obj <= db_company_hourly_date_time_obj <= end_company_time_obj:
                         if company_hourly.hour in results:
-                            results[company_hourly.hour] += company_hourly.total
+                            results[company_hourly.hour] += float("%.2f" %company_hourly.total)
                         else:
-                            results[company_hourly.hour] = company_hourly.total
+                            results[company_hourly.hour] = float("%.2f" %company_hourly.total)
 
             else:
                 return {'message': 'this company does not have any transaction at given date'}
@@ -159,8 +159,8 @@ class HourlyQuery(Resource):
             return {'message': 'company branch does not exist'}
         total = 0
         for _, value in results.items():
-            total += value
-        results['total'] = total
+            total += float(value)
+        results['total'] = "%.2f" %total
 
         return results
 # ---------------------------------------------------------------------------
