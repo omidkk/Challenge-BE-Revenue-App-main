@@ -7,7 +7,7 @@ class SendEmail():
     @classmethod
     def send_main(cls, mode, receiver_email, token):
         port = 465  # For SSL
-        __password = 'QQ123456789QQ'
+        __password = 'QQ1users23456789QQ'
         __sender_email = "layermarkinterview@gmail.com"
 
         # Create a secure SSL context

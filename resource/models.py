@@ -73,20 +73,25 @@ class UserModel(db.Model):
         return sha256.verify(password, hash)
 
 
-# --------------------------------topic----------------------------------
-class TopicModel(db.Model):
-    __tablename__ = 'topic'
+# --------------------------------company----------------------------------
+class CompanyModel(db.Model):
+    __tablename__ = 'companies'
 
     id = db.Column(db.Integer, primary_key=True)
-    topic_name = db.Column(db.String(120), unique=True, nullable=False)
+    branch_number = db.Column(db.String(120), unique=True, nullable=False)
+    company_name = db.Column(db.String(120), unique=True, nullable=False)
 
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, topic_id):
-        return cls.query.filter_by(id=topic_id).all()
+    def find_by_id(cls, company_id):
+        return cls.query.filter_by(id=company_id).first()
+
+    @classmethod
+    def find_by_branch_number(cls, company_branch_number):
+        return cls.query.filter_by(branch_number=company_branch_number).first()
 
     @classmethod
     def delete_by_id(cls, id):
@@ -96,86 +101,87 @@ class TopicModel(db.Model):
 
     @classmethod
     def update_by_id(cls, id, update):
-        topic = db.session.query(cls).filter(cls.id == id).first()
-        topic.topic_name = update
+        company = db.session.query(cls).filter(cls.id == id).first()
+        company.company_name = update
         db.session.commit()
-        return {'message': 'item deleted successfully '}
+        return {'message': 'item updated successfully '}
 
     @classmethod
     def return_all(cls):
         def to_json(x):
             return {
                 "id": x.id,
-                'topic_name': x.topic_name,
+                'company_name': x.company_name,
             }
 
-        return {'topics': list(map(lambda x: to_json(x), TopicModel.query.all()))}
+        return {'companies': list(map(lambda x: to_json(x), CompanyModel.query.all()))}
 
 
-# --------------------------------topic option----------------------------------
-class TopicOptionModel(db.Model):
-    __tablename__ = 'topic_options'
+# --------------------------------company_day----------------------------------
+class CompanyDailyModel(db.Model):
+    __tablename__ = 'company_daily'
 
     id = db.Column(db.Integer, primary_key=True)
-    key = db.Column(db.Integer, db.ForeignKey('topic.id'))
-    option = db.Column(db.String(120), unique=True, nullable=False)
-    result = db.Column(db.Integer, unique=True, nullable=False, default=0)
-    topic_name = db.relationship('TopicModel', backref='topic')
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'))
+    date = db.Column(db.String(120), unique=False, nullable=False)
+    total = db.Column(db.Float, unique=False, nullable=False, default=0)
+    company_name = db.relationship('CompanyModel', backref='companies')
 
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
 
     @classmethod
-    def find_by_topic(cls, topic_id):
-        return cls.query.filter_by(key=topic_id).all()
+    def find_by_company_id(cls, company_id):
+        return cls.query.filter_by(company_id=company_id).all()
 
     @classmethod
-    def find_by_topic_id_option_id(cls, topic_id, option_id):
-        return cls.query.filter_by(key=topic_id, id=option_id).first()
+    def find_by_company_id_and_date(cls, company_id, date):
+        return cls.query.filter_by(company_id=company_id, date=date).first()
 
     @classmethod
-    def delete_by_id(cls, id):
-        db.session.query(cls).filter(cls.key == id).delete()
+    def update_company_daily(cls, id, total):
+        company_daily = db.session.query(cls).filter(cls.id == id).first()
+        company_daily.total += total
         db.session.commit()
-        return {'message': 'item deleted successfully '}
-
-    @classmethod
-    def update_by_id(cls, id, updates):
-        topic_options = db.session.query(cls).filter(cls.id == id).first()
-        if 'topic_id' in updates:
-            topic_options.key = int(updates['topic_id'])
-        if 'topic_option' in updates:
-            topic_options.option = updates['topic_option']
-        db.session.commit()
-        return {'message': 'item deleted successfully '}
+        return {'message': 'item updated successfully '}
 
     @classmethod
     def return_all(cls):
         def to_json(x):
             return {
-                "option_id": x.id,
-                "topic_id": x.key,
-                'topic': x.topic_name.topic_name,
-                'option': x.option,
-                'result': x.result,
+                "id": x.id,
+                'company_daily': x.company_name,
+                'date': x.date,
+                'total': x.total,
             }
 
-        return {'topic_options': list(map(lambda x: to_json(x), TopicOptionModel.query.all()))}
+        return {'company_daily': list(map(lambda x: to_json(x), CompanyDailyModel.query.all()))}
 
 
-# --------------------------------user answer tracking----------------------------------
-class UserAnswerTrackModel(db.Model):
-    __tablename__ = 'user_answers'
+# --------------------------------company_hourly----------------------------------
+class CompanyHourlyModel(db.Model):
+    __tablename__ = 'company_hourly'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(120), unique=True, nullable=False)
-    topic_id = db.Column(db.Integer, unique=True, nullable=False)
+    company_daily_id = db.Column(db.Integer, db.ForeignKey('company_daily.id'))
+    hour = db.Column(db.String(120), unique=False, nullable=False)
+    total = db.Column(db.Float, unique=False, nullable=False, default=0)
+    company_date = db.relationship('CompanyDailyModel', backref='company_daily')
 
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
 
     @classmethod
-    def find_by_topic_option_username(cls, topic_id, username):
-        return cls.query.filter_by(topic_id=topic_id, username=username).first()
+    def return_all(cls):
+        def to_json(x):
+            return {
+                "id": x.id,
+                'company_daily_id': x.company_daily_id,
+                'hour': x.hour,
+                'total': x.total,
+
+            }
+
+        return {'company_hour': list(map(lambda x: to_json(x), CompanyHourlyModel.query.all()))}
