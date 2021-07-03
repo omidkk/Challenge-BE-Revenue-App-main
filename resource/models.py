@@ -174,6 +174,10 @@ class CompanyHourlyModel(db.Model):
         db.session.commit()
 
     @classmethod
+    def find_by_company_daily_id(cls, company_daily_id):
+        return cls.query.filter_by(company_daily_id=company_daily_id).all()
+
+    @classmethod
     def return_all(cls):
         def to_json(x):
             return {

@@ -41,9 +41,8 @@ class DataInsert(Resource):
             date = row['Creation Date'].split(' ')[0]
             total = float(row['Total'])
             company_daily = CompanyDailyModel.find_by_company_id_and_date(company_id, date)
-            if (company_daily):
-                if total > 0:
-                    CompanyDailyModel.update_company_daily(company_daily.id, total)
+            if company_daily:
+                CompanyDailyModel.update_company_daily(company_daily.id, total)
             else:
                 new_company_daily = CompanyDailyModel(
                     company_id=company_id,
@@ -123,4 +122,45 @@ class DailyQuery(Resource):
 
         return results
 
+
+# ---------------------------------------------------------------------------
+class HourlyQuery(Resource):
+    parser.add_argument('branch_id', help='This field cannot be blank')
+    parser.add_argument('date', help='This field cannot be blank')
+    parser.add_argument('start hour', help='This field cannot be blank')
+    parser.add_argument('end hour', help='This field cannot be blank')
+
+    @jwt_required()
+    def get(self):
+        data = parser.parse_args()
+        token = get_jwt_identity()
+        company = CompanyModel.find_by_branch_number(data['branch_id'])
+        date_time_obj = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        start_company_time_obj = datetime.strptime(data['start hour'], '%H:%M').time()
+        end_company_time_obj = datetime.strptime(data['end hour'], '%H:%M').time()
+
+        results = dict()
+        if company:
+            company_daily = CompanyDailyModel.find_by_company_id_and_date(company.id,
+                                                                          date_time_obj.strftime('%d/%m/%y'))
+            if company_daily:
+                company_hourlies = CompanyHourlyModel.find_by_company_daily_id(company_daily.id)
+                for company_hourly in company_hourlies:
+                    db_company_hourly_date_time_obj = datetime.strptime(company_hourly.hour, '%H:%M').time()
+                    if start_company_time_obj <= db_company_hourly_date_time_obj <= end_company_time_obj:
+                        if company_hourly.hour in results:
+                            results[company_hourly.hour] += company_hourly.total
+                        else:
+                            results[company_hourly.hour] = company_hourly.total
+
+            else:
+                return {'message': 'this company does not have any transaction at given date'}
+        else:
+            return {'message': 'company branch does not exist'}
+        total = 0
+        for _, value in results.items():
+            total += value
+        results['total'] = total
+
+        return results
 # ---------------------------------------------------------------------------

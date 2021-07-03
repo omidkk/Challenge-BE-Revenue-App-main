@@ -43,6 +43,7 @@ api.add_resource(user_services.UserResetPassword, '/user/forgetPassword')
 
 api.add_resource(data_services.DataInsert, '/uploadData')
 api.add_resource(data_services.DailyQuery, '/daily')
+api.add_resource(data_services.HourlyQuery, '/hourly')
 
 
 if __name__ == "__main__":
